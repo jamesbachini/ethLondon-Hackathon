@@ -1,25 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>mETH | Mutlichain Staked Ethereum</title>
-    <link href="https://fonts.googleapis.com/css2?family=Mali:wght@300;400;600&family=Source+Code+Pro&display=swap" rel="stylesheet"> 
-    <style>
-      html { background: url(https://cloudflare-ipfs.com/ipfs/bafybeiez3pxezg6nh42ktu5rwhi5hxzh4i4ajedabgk3od3hahw5fh5s7u) no-repeat center center fixed; -webkit-background-size: cover;-moz-background-size: cover;-o-background-size: cover;background-size: cover; }
-      body { font-family: "Source Code Pro", sans-serif; background: #00000088; color: #CCC; margin: 0px;}
-      button { width: 120px; height: 30px; border: none; border-radius: 15px; background: #000; background: -webkit-linear-gradient(#349bf5, #125748); color: #CCC; cursor: pointer; margin: 5px; }
-      input[type=text] { width: 80px; height: 24px; border-radius: 5px; }
-      th { border-bottom: 1px solid #444; font-size: 1.1em; }
-      a { color: #CCC; }
-      .blue { color: #2368a3; background: -webkit-linear-gradient(#349bf5, #22a78a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: none; }
-      @media screen and (max-width: 720px) {
-        .mobile-hidden { display: none; }
-      }
-    </style>
-  </head>
-  <body id="top">
+const code = `
+  <link href="https://fonts.googleapis.com/css2?family=Mali:wght@300;400;600&family=Source+Code+Pro&display=swap" rel="stylesheet"> 
+  <style>
+    html { background: url(https://cloudflare-ipfs.com/ipfs/bafybeiez3pxezg6nh42ktu5rwhi5hxzh4i4ajedabgk3od3hahw5fh5s7u) no-repeat center center fixed; -webkit-background-size: cover;-moz-background-size: cover;-o-background-size: cover;background-size: cover; }
+    body { font-family: "Source Code Pro", sans-serif; background: #00000088; color: #CCC; margin: 0px;}
+    button { width: 120px; height: 30px; border: none; border-radius: 15px; background: #000; background: -webkit-linear-gradient(#349bf5, #125748); color: #CCC; cursor: pointer; margin: 5px; }
+    input[type=text] { width: 80px; height: 24px; border-radius: 5px; }
+    th { border-bottom: 1px solid #444; font-size: 1.1em; }
+    a { color: #CCC; }
+    .blue { color: #2368a3; background: -webkit-linear-gradient(#349bf5, #22a78a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: none; }
+    @media screen and (max-width: 720px) {
+      .mobile-hidden { display: none; }
+    }
+  </style>
+
     <div style="max-width: 95%; margin: 0 auto;">
       <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; width: 100%; padding-top: 1%">
         <div class="blue" style="flex: 1 1 auto; text-align: center; font-size: 1.8em; font-weight: bold;">mETH</div>
@@ -83,12 +76,6 @@
       </div>
       <div style="text-align: center; padding: 1% 0 0 0"><h3><a href="#learn-more">learn more</a></h3></div>
       <div style="max-width: 800px; margin: auto;" id="learn-more">
-        <!--
-            <div style="border: 1px solid #CCC; border-radius: 3px; height: 400px; text-align: center;">
-                <iframe src="https://www.youtube.com/embed/abc?rel=0&amp;hd=1" allowfullscreen="" height="100%" width="100%" frameborder="0"></iframe>
-            </div>
-        -->
-
         <h2 class="blue" id="introduction">introduction</h2>
         <p>The multichain Staked ETH Index Token (mETH), is a unique DeFi solution that brings together a decentralized financial ecosystem of various blockchain protocols like Ethereum and NEAR Aurora.</p>
         <p>The mETH project is a cross chain index fund of staked tokens like stETH and rETH, delivering a superior-grade interoperability for a lucrative and secure yield farming experience. The token allows users to deposit stETH and rETH to mint mETH tokens and bridge them across multiple chains, enabling seamless cross-chain transactions.</p>
@@ -222,5 +209,25 @@
 
 
     </script>
-  </body>
-</html>
+
+`;
+
+return (
+  <div
+    style={{
+      background: "#000",
+      width: "100% ",
+      height: "100%",
+      "min-height": "800px",
+    }}
+  >
+    <iframe
+      style={{
+        width: "100% ",
+        height: "100%",
+        "min-height": "800px",
+      }}
+      srcDoc={code}
+    />
+  </div>
+);

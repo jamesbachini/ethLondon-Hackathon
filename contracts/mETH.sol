@@ -39,6 +39,7 @@ contract mETH is ERC20 {
     address public crossChainContract;
     mapping(bytes32 => bool) public processed;
     uint32 nonce;
+    uint constant gasLimit = 50_000;
 
     struct whMessage {
         address recipient;
@@ -62,31 +63,26 @@ contract mETH is ERC20 {
     }
 
     function withdraw(uint _amount) external {
-        transferFrom(msg.sender, address(this), _amount);
-        _mint(msg.sender, _amount * 2);
-        IERC20(stETH).transferFrom(address(this), msg.sender, _amount / 2);
-        IERC20(rETH).transferFrom(address(this), msg.sender, _amount / 2);
+        _burn(msg.sender, _amount);
+        IERC20(stETH).transfer(msg.sender, _amount / 2);
+        IERC20(rETH).transfer(msg.sender, _amount / 2);
     }
 
 
     function bridge(uint _amount, uint16 _targetChain) external payable {
         _burn(msg.sender, _amount);
-        bytes memory whMsg = abi.encode(whMessage(crossChainContract, _amount));
         nonce += 1;
-        //IWormhole(wormhole).publishMessage{
-        //    value: IWormhole(wormhole).messageFee()
-        //}(nonce, whMsg, 200);
-        IWormhole(wormhole).sendPayloadToEvm{value: msg.value}(
+        IWormhole(wormhole).sendPayloadToEvm{value: quote(_targetChain)}(
             _targetChain,
             crossChainContract,
             abi.encode(_amount, msg.sender),
             0,
-            21_000 // optimize gas limit
+            gasLimit
         );
     }
 
-    function quote(uint16 _targetChain, uint256 _gasLimit) public view returns (uint256 cost) {
-        (cost,) = IWormhole(wormhole).quoteEVMDeliveryPrice(_targetChain, 0, _gasLimit);
+    function quote(uint16 _targetChain) public view returns (uint256 cost) {
+        (cost,) = IWormhole(wormhole).quoteEVMDeliveryPrice(_targetChain, 0, gasLimit);
     }
 
     function receiveWormholeMessages(
@@ -100,7 +96,8 @@ contract mETH is ERC20 {
         require(!processed[deliveryHash], "already processed");
         require(sourceChain != 0, "add approved source chains");
         processed[deliveryHash] = true;
-        (uint mintAmount) = abi.decode(payload, (uint));
+        (uint mintAmount, address sender) = abi.decode(payload, (uint, address));
+        require(sender == crossChainContract, "wrong contract");
         _mint(msg.sender, mintAmount);
     }
 
