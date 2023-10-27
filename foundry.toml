@@ -1,0 +1,14 @@
+[profile.default]
+solc-version = "0.8.21"
+verbosity = 2
+optimizer = true
+optimizer_runs = 1000
+via_ir = false
+libs = ['node_modules', 'lib']
+src = 'contracts'
+out = 'out'
+test = 'test'
+cache_path = 'cache_forge'
+[profile.default.optimizer_details]
+constantOptimizer = true
+yul = true
