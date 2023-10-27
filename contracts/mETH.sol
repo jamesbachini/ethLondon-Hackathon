@@ -4,83 +4,108 @@ pragma solidity ^0.8.21;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 interface IWormhole {
-    struct Signature {
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-        uint8 guardianIndex;
-    }
-
-    struct VM {
-        uint8 version;
-        uint32 timestamp;
-        uint32 nonce;
-        uint16 emitterChainId;
-        bytes32 emitterAddress;
-        uint64 sequence;
-        uint8 consistencyLevel;
-        bytes payload;
-        uint32 guardianSetIndex;
-        Signature[] signatures;
-        bytes32 hash;
-    }
-
-    function messageFee() external view returns (uint256);
-
     function publishMessage(uint32 nonce, bytes memory payload, uint8 consistencyLevel)
         external
         payable
         returns (uint64 sequence);
 
-    function parseAndVerifyVM(bytes calldata encodedVM)
-        external
-        view
-        returns (VM memory vm, bool valid, string memory reason);
+     function sendPayloadToEvm(
+        uint16 targetChain,
+        address targetAddress,
+        bytes memory payload,
+        uint256 receiverValue,
+        uint256 gasLimit
+    ) external payable returns (uint64 sequence);
 
+    function quoteEVMDeliveryPrice(
+        uint16 targetChain,
+        uint256 receiverValue,
+        uint256 gasLimit
+    ) external view returns (uint256 nativePriceQuote, uint256);
+
+    function messageFee() external view returns (uint256);
+}
+
+contract MockLST is ERC20 {
+    constructor(string memory _name) ERC20(_name, _name) {
+        _mint(msg.sender, 1_000_000 ether);
+    }
 }
 
 contract mETH is ERC20 {
     address public stETH;
     address public rETH;
     address public wormhole;
-    mapping(address => bool) public validEmitters;
+    address public crossChainContract;
     mapping(bytes32 => bool) public processed;
-    uint nonce;
+    uint32 nonce;
 
     struct whMessage {
         address recipient;
-        string message;
+        uint amount;
     }
 
-    constructor(address _stETH, address _rETH, address _wormhole, address _emitter) ERC20("Multichain Staked ETH", "mETH") {
-        stETH = _stETH;
-        rETH = _rETH;
-        wormhole = _wormhole;
-        validEmitters[_emitter] = true;
+    constructor(address _wormhole, address _crossChainContract) ERC20("Multichain Staked ETH", "mETH") {
+        wormhole = _wormhole; // 0x28D8F1Be96f97C1387e94A53e00eCcFb4E75175a
+        crossChainContract = _crossChainContract;
+        // Mint mock tokens and transfer to deployer for testing
+        stETH = address(new MockLST("stETH"));
+        rETH = address(new MockLST("rETH"));
+        IERC20(stETH).transfer(msg.sender, 1_000_000 ether);
+        IERC20(rETH).transfer(msg.sender, 1_000_000 ether);
     }
 
     function deposit(uint _amount) external {
-        IERC20(stETH).transferFrom(msg.sender, address(this), _amount);
-        IERC20(rETH).transferFrom(msg.sender, address(this), _amount);
+        IERC20(stETH).transferFrom(msg.sender, address(this), _amount / 2);
+        IERC20(rETH).transferFrom(msg.sender, address(this), _amount / 2);
+        _mint(msg.sender, _amount);
+    }
+
+    function withdraw(uint _amount) external {
+        transferFrom(msg.sender, address(this), _amount);
         _mint(msg.sender, _amount * 2);
+        IERC20(stETH).transferFrom(address(this), msg.sender, _amount / 2);
+        IERC20(rETH).transferFrom(address(this), msg.sender, _amount / 2);
     }
 
-    function bridge(uint _amount) external payable {
+
+    function bridge(uint _amount, uint16 _targetChain) external payable {
         _burn(msg.sender, _amount);
-        bytes memory whMsg = abi.encode(whMessage(recipient, _amount));
+        bytes memory whMsg = abi.encode(whMessage(crossChainContract, _amount));
         nonce += 1;
-        IWormhole(wormhole).publishMessage{
-            value: IWormhole(wormhole).messageFee()
-        }(nonce, whMsg, 200);
+        //IWormhole(wormhole).publishMessage{
+        //    value: IWormhole(wormhole).messageFee()
+        //}(nonce, whMsg, 200);
+        IWormhole(wormhole).sendPayloadToEvm{value: msg.value}(
+            _targetChain,
+            crossChainContract,
+            abi.encode(_amount, msg.sender),
+            0,
+            21_000 // optimize gas limit
+        );
     }
 
-    function withdraw(bytes memory signedVaas) external payable {
-        (IWormhole.VM memory parsed, bool valid, string memory reason) = IWormhole(wormhole).parseAndVerifyVM(signedVaas);
-        require(validEmitters[parsed.emitterAddress] == true, "non valid emitter");
-        whMessage memory message = abi.decode(parsed.payload, (whMessage));
-        require(message.recipient == address(this));
-        require(processed[parsed.hash] == false, "already processed");
-        processed[parsed.hash] = true;
-        _mint(msg.sender, uint(parsed.payload));
+    function quote(uint16 _targetChain, uint256 _gasLimit) public view returns (uint256 cost) {
+        (cost,) = IWormhole(wormhole).quoteEVMDeliveryPrice(_targetChain, 0, _gasLimit);
+    }
+
+    function receiveWormholeMessages(
+        bytes memory payload,
+        bytes[] memory,
+        bytes32,
+        uint16 sourceChain,
+        bytes32 deliveryHash
+    ) public payable {
+        require(msg.sender == wormhole, "not allowed");
+        require(!processed[deliveryHash], "already processed");
+        require(sourceChain != 0, "add approved source chains");
+        processed[deliveryHash] = true;
+        (uint mintAmount) = abi.decode(payload, (uint));
+        _mint(msg.sender, mintAmount);
+    }
+
+    function updateCrossChainContract(address _newContract) external {
+        require(nonce == 0, "too late");
+        crossChainContract = _newContract;
     }
 }
