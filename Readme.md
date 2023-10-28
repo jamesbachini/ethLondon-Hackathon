@@ -35,6 +35,8 @@ https://github.com/jamesbachini/ethLondon-Hackathon/blob/main/contracts/mETH.sol
 
 The frontend is built on ethers.js and the intention was to keep the code as simple as possible. This enabled us to migrate it to JSX and deploy to a NEAR BOS component.
 
+Code: https://github.com/jamesbachini/ethLondon-Hackathon/blob/main/frontend/bos2.jsx
+
 https://near.org/jamesbachini.near/widget/mETH
 
 ## Installation Instructions
