@@ -177,12 +177,13 @@
         let userAmount = document.getElementById('deposit-amount').value;
         if (!userAmount) userAmount = prompt('Enter an amount to deposit in ETH');
         const weiAmount = ethers.utils.parseEther(userAmount);
+        const approveAmount = weiAmount / 2;
         document.getElementById('deposit-amount').value = '';
         document.getElementById('deposit').innerHTML = 'TX 1/3';
-        const tx1 = await stEth.approve(mEthAddressMainnet, weiAmount);
+        const tx1 = await stEth.approve(mEthAddressMainnet, approveAmount);
         const receipt1 = await tx1.wait();
         document.getElementById('deposit').innerHTML = 'TX 2/3';
-        const tx2 = await rEth.approve(mEthAddressMainnet, weiAmount);
+        const tx2 = await rEth.approve(mEthAddressMainnet, approveAmount);
         const receipt2 = await tx2.wait();
         document.getElementById('deposit').innerHTML = 'TX 3/3';
         const tx3 = await mEthMainnet.deposit(weiAmount);
